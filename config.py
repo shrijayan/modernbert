@@ -9,10 +9,10 @@ class ClassificationType(Enum):
 
 @dataclass
 class ModelConfig:
-    model_name: str = "microsoft/deberta-base"
-    max_length: int = 512
-    batch_size: int = 8
-    num_epochs: int = 0.01
+    model_name: str = "answerdotai/ModernBERT-base"
+    max_length: int = 8192
+    batch_size: int = 1
+    num_epochs: int = 10
     seed: int = 42
     classification_type: ClassificationType = ClassificationType.MULTICLASS
 

@@ -3,10 +3,7 @@ from config import ModelConfig, ClassificationType
 from pipeline import Pipeline
 
 def main():
-    config = ModelConfig(
-        model_name="microsoft/deberta-base",
-        classification_type=ClassificationType.MULTICLASS
-    )
+    config = ModelConfig()
     pipeline = Pipeline(config)
     pipeline.run('dataset/medical_mimic(1).json', 'dataset/medical_mimic_new_(1).json')
 

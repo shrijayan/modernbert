@@ -1,5 +1,5 @@
 # pipeline.py
-import wandb
+# import wandb
 import logging
 import random
 import numpy as np
@@ -27,9 +27,7 @@ class Pipeline:
         torch.manual_seed(self.config.seed)
         torch.cuda.manual_seed_all(self.config.seed)
 
-
-    def train_model(self, data: Tuple, num_labels: int, model_name: str) -> None:
-        texts, labels = data
+    def train_model(self, texts: list[str], labels: list[list[int]], model_name: str) -> None:
         train_texts, val_texts, train_labels, val_labels = self.data_processor.split_data(texts, labels)
         
         train_dataset = self.data_processor.prepare_dataset(train_texts, train_labels)
@@ -40,19 +38,17 @@ class Pipeline:
             self.config.model_name,
             train_dataset,
             val_dataset,
-            num_labels=num_labels,
+            num_labels=5,  # 4 severity levels + 1 action required
             output_dir=f"./{model_name}",
-            config=self.config
+            config=self.config,
+            problem_type="multi_label_classification"
         )
         
         trainer.save_model(f"./{model_name}_final")
         self.tokenizer.save_pretrained(f"./{model_name}_final")
 
     def run(self, file1: str, file2: str):
-        wandb.init(project="medical-text-classification")
-        
-        severity_data, action_data = self.data_processor.load_data(file1, file2)
-        self.train_model(severity_data, 4, "severity_model")
-        self.train_model(action_data, 2, "action_model")
-        
-        wandb.finish()
+        # wandb.init(project="medical-text-classification")
+        texts, labels = self.data_processor.load_data(file1, file2)
+        self.train_model(texts, labels, "multilabel_model")
+        # wandb.finish()

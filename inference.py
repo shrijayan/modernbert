@@ -9,6 +9,13 @@ class RedditPostClassifier:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = None
         self.labels = None
+        # Add severity mapping based on the training data
+        self.severity_mapping = {
+            'low': 0,
+            'medium': 1,
+            'high': 2
+        }
+        self.reverse_severity_mapping = {v: k for k, v in self.severity_mapping.items()}
         
     def load_labels_from_dataset(self, dataset_path: str) -> List[str]:
         unique_labels = set()
@@ -18,9 +25,7 @@ class RedditPostClassifier:
         for entry in data:
             if 'parsed_data' in entry:
                 cats = entry['parsed_data'].get('severity', [])
-                other_cats = entry['parsed_data'].get('other_cats', [])
-                unique_labels.update(cats)
-                unique_labels.update(other_cats)
+                unique_labels.update([cats] if isinstance(cats, str) else cats)
         
         self.labels = sorted(list(unique_labels))
         return self.labels
@@ -38,7 +43,7 @@ class RedditPostClassifier:
         ).to(self.device)
         self.model.eval()
 
-    def predict(self, text: str, threshold: float = 0.3) -> Dict:
+    def predict(self, text: str) -> Dict:
         if not self.model or not self.labels:
             raise ValueError("Model and labels must be initialized before prediction")
             
@@ -54,27 +59,16 @@ class RedditPostClassifier:
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
-            probs = torch.sigmoid(logits)
+            probs = torch.softmax(logits, dim=-1)
             
-            # Get top K predictions regardless of threshold
-            k = min(5, len(self.labels))
-            top_k_probs, top_k_indices = torch.topk(probs[0], k)
-            
-            pred_tuples = [(self.labels[idx], float(prob)) 
-                          for idx, prob in zip(top_k_indices.tolist(), top_k_probs.tolist())
-                          if float(prob) > threshold]
-            
-            if not pred_tuples:  # If no predictions above threshold, take top prediction
-                idx = top_k_indices[0].item()
-                prob = float(top_k_probs[0].item())
-                pred_tuples = [(self.labels[idx], prob)]
-            
-            pred_labels = [label for label, _ in pred_tuples]
-            pred_probs = [f"{prob:.2%}" for _, prob in pred_tuples]
+            # Get the predicted label with highest probability
+            predicted_idx = torch.argmax(probs, dim=-1).item()
+            predicted_label = self.labels[predicted_idx]
+            confidence = float(probs[0][predicted_idx])
             
             return {
-                "labels": pred_labels,
-                "probabilities": pred_probs
+                "labels": [predicted_label],
+                "probabilities": [f"{confidence:.2%}"]
             }
 
 def process_reddit_post(classifier: RedditPostClassifier, post_data: Dict) -> Dict:
@@ -82,7 +76,6 @@ def process_reddit_post(classifier: RedditPostClassifier, post_data: Dict) -> Di
     predictions = classifier.predict(text)
     
     return {
-        "raw_data": post_data["raw_data"],
         "predictions": {
             "categories": predictions["labels"],
             "confidence_scores": predictions["probabilities"]
@@ -90,6 +83,10 @@ def process_reddit_post(classifier: RedditPostClassifier, post_data: Dict) -> Di
     }
 
 if __name__ == "__main__":
+    # Key modifications:
+    # 1. Changed to single-label classification
+    # 2. Using softmax instead of sigmoid
+    # 3. Added severity mapping
     classifier = RedditPostClassifier("severity_model_final")
     
     classifier.load_labels_from_dataset("dataset/medical_mimic(1).json")
