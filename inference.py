@@ -9,43 +9,31 @@ class RedditPostClassifier:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = None
         self.labels = None
-        # Add severity mapping based on the training data
-        self.severity_mapping = {
-            'low': 0,
-            'medium': 1,
-            'high': 2
-        }
-        self.reverse_severity_mapping = {v: k for k, v in self.severity_mapping.items()}
         
-    def load_labels_from_dataset(self, dataset_path: str) -> List[str]:
-        unique_labels = set()
-        with open(dataset_path, 'r') as f:
-            data = json.load(f)
-            
-        for entry in data:
-            if 'parsed_data' in entry:
-                cats = entry['parsed_data'].get('severity', [])
-                unique_labels.update([cats] if isinstance(cats, str) else cats)
+        # Updated severity and action labels
+        self.severity_labels = ['low', 'medium', 'high', 'critical']
+        self.action_labels = ['no_action', 'action_required']
         
-        self.labels = sorted(list(unique_labels))
-        return self.labels
+    def load_labels_from_dataset(self, dataset_path: str) -> tuple[List[str], List[str]]:
+        """
+        Load labels from the dataset. 
+        For multi-label, we know the structure from the data processing.
+        """
+        return self.severity_labels, self.action_labels
     
     def initialize_model(self, model_path: str = None):
-        if not self.labels:
-            raise ValueError("Labels must be loaded before initializing model")
-        
         path = model_path or self.tokenizer.name_or_path
         self.model = AutoModelForSequenceClassification.from_pretrained(
             path,
-            num_labels=len(self.labels),
+            num_labels=5,  # 4 severity levels + 1 action
             problem_type="multi_label_classification",
             ignore_mismatched_sizes=True
         ).to(self.device)
         self.model.eval()
 
     def predict(self, text: str) -> Dict:
-        if not self.model or not self.labels:
-            raise ValueError("Model and labels must be initialized before prediction")
+        if not self.model:
+            raise ValueError("Model must be initialized before prediction")
             
         inputs = self.tokenizer(
             text,
@@ -59,16 +47,32 @@ class RedditPostClassifier:
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
-            probs = torch.softmax(logits, dim=-1)
             
-            # Get the predicted label with highest probability
-            predicted_idx = torch.argmax(probs, dim=-1).item()
-            predicted_label = self.labels[predicted_idx]
-            confidence = float(probs[0][predicted_idx])
+            # Apply sigmoid for multi-label classification
+            probs = torch.sigmoid(logits).cpu().numpy()[0]
+            
+            # Separate severity and action predictions
+            severity_probs = probs[:4]
+            action_prob = probs[4]
+            
+            # Get severity prediction
+            severity_idx = severity_probs.argmax()
+            severity_label = self.severity_labels[severity_idx]
+            severity_confidence = severity_probs[severity_idx]
+            
+            # Get action prediction
+            action_label = self.action_labels[1] if action_prob > 0.5 else self.action_labels[0]
+            action_confidence = action_prob if action_prob > 0.5 else 1 - action_prob
             
             return {
-                "labels": [predicted_label],
-                "probabilities": [f"{confidence:.2%}"]
+                "severity": {
+                    "label": severity_label,
+                    "confidence": f"{severity_confidence:.2%}"
+                },
+                "action": {
+                    "label": action_label,
+                    "confidence": f"{action_confidence:.2%}"
+                }
             }
 
 def process_reddit_post(classifier: RedditPostClassifier, post_data: Dict) -> Dict:
@@ -77,23 +81,23 @@ def process_reddit_post(classifier: RedditPostClassifier, post_data: Dict) -> Di
     
     return {
         "predictions": {
-            "categories": predictions["labels"],
-            "confidence_scores": predictions["probabilities"]
+            "severity": predictions["severity"],
+            "action": predictions["action"]
         }
     }
 
 if __name__ == "__main__":
-    # Key modifications:
-    # 1. Changed to single-label classification
-    # 2. Using softmax instead of sigmoid
-    # 3. Added severity mapping
-    classifier = RedditPostClassifier("severity_model_final")
+    # Initialize classifier
+    classifier = RedditPostClassifier("multilabel_model/checkpoint-10")
     
+    # Load labels (though now we know the structure)
     classifier.load_labels_from_dataset("dataset/medical_mimic(1).json")
     classifier.initialize_model()
     
+    # Load test data
     with open("dataset/medical_mimic(1).json", 'r') as f:
         test_data = json.load(f)[0]
     
+    # Process and print results
     result = process_reddit_post(classifier, test_data)
     print(json.dumps(result, indent=2))
