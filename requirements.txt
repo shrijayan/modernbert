@@ -1,0 +1,6 @@
+torch
+numpy
+'transformers[torch]'
+datasets
+scikit-learn
+psutil

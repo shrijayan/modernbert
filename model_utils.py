@@ -1,6 +1,7 @@
 # model_utils.py
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, f1_score
 import numpy as np
+import torch
 
 def compute_metrics(pred):
     labels = pred.label_ids
@@ -18,8 +19,6 @@ def compute_metrics(pred):
         'recall': recall
     }
 
-
-# model_utils.py
 def compute_multilabel_metrics(pred):
     labels = pred.label_ids
     # Apply sigmoid to get probabilities
@@ -45,8 +44,3 @@ def compute_multilabel_metrics(pred):
         'action_f1': action_f1,
         'avg_f1': (severity_f1 + action_f1) / 2
     }
-
-# pipeline.py
-def run(self, file1: str, file2: str):
-    texts, labels = self.data_processor.load_data(file1, file2)
-    self.train_model(texts, labels, "multilabel_model")

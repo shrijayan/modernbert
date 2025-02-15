@@ -8,7 +8,7 @@ from transformers import (
 )
 from datasets import Dataset as HFDataset
 from config import ModelConfig
-from model_utils import compute_metrics, compute_multilabel_metrics
+from model_utils import compute_multilabel_metrics
 
 class ModelTrainer:
     def train(
@@ -26,8 +26,10 @@ class ModelTrainer:
             num_train_epochs=config.num_epochs,
             per_device_train_batch_size=config.batch_size,
             per_device_eval_batch_size=config.batch_size,
-            warmup_steps=500,
-            weight_decay=0.01,
+            warmup_ratio=config.warmup_ratio,
+            weight_decay=config.weight_decay,
+            learning_rate=config.learning_rate,
+            gradient_accumulation_steps=config.gradient_accumulation_steps,
             logging_dir='./logs',
             logging_steps=10,
             evaluation_strategy="steps",
@@ -35,8 +37,8 @@ class ModelTrainer:
             save_strategy="steps",
             save_steps=500,
             load_best_model_at_end=True,
-            metric_for_best_model="avg_f1",  # Changed from "f1" to "avg_f1" to match compute_multilabel_metrics
-            fp16=True  # Enable mixed precision training
+            metric_for_best_model="avg_f1",
+            fp16=config.fp16
         )
             
         model = AutoModelForSequenceClassification.from_pretrained(

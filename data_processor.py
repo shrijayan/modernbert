@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 import os
 
 class DataProcessor:
-    def __init__(self, tokenizer, max_length: int = 512):
+    def __init__(self, tokenizer, max_length):
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.severity_mapping = {'low': 0, 'medium': 1, 'high': 2, 'critical': 3}

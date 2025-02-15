@@ -39,22 +39,19 @@ class Pipeline:
         torch.manual_seed(self.config.seed)
         torch.cuda.manual_seed_all(self.config.seed)
 
-    def train_model(self, dataset_splits: dict, model_name: str) -> None:
-        # Log GPU information for debugging
-        if torch.cuda.is_available():
-            logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
-            logger.info(f"GPU Memory Usage: {torch.cuda.memory_allocated(0) / 1024**2:.2f} MB")
+    def run(self, dataset_name):
+        dataset_splits = self.data_processor.load_data(dataset_name)
         
-        # Unpack the splits
+        # Prepare datasets
         train_texts, train_labels = dataset_splits['train']
         val_texts, val_labels = dataset_splits['validation']
         test_texts, test_labels = dataset_splits['test']
         
-        # Prepare datasets for training and validation
         train_dataset = self.data_processor.prepare_dataset(train_texts, train_labels)
         val_dataset = self.data_processor.prepare_dataset(val_texts, val_labels)
         
-        logger.info(f"Training {model_name}...")
+        # Train the model using ModelTrainer
+        model_name = "multilabel_model"
         trainer = self.model_trainer.train(
             self.config.model_name,
             train_dataset,
@@ -62,25 +59,14 @@ class Pipeline:
             num_labels=5,  # 4 severity levels + 1 action required
             output_dir=f"./{model_name}",
             config=self.config,
-            problem_type="multi_label_classification"
+            problem_type=self.config.classification_type.value
         )
-        
-        # Log memory usage after training
-        if torch.cuda.is_available():
-            logger.info(f"GPU Memory Usage After Training: {torch.cuda.memory_allocated(0) / 1024**2:.2f} MB")
         
         # Save the final model and tokenizer
         trainer.save_model(f"./{model_name}_final")
         self.tokenizer.save_pretrained(f"./{model_name}_final")
         
-        # Optional: Evaluate on test set
+        # Evaluate on test set
         test_dataset = self.data_processor.prepare_dataset(test_texts, test_labels)
         test_results = trainer.evaluate(test_dataset)
         logger.info(f"Test Results: {test_results}")
-
-    def run(self, dataset_name: str = "shrijayan/medical_mimic"):
-        # Load data from Hugging Face dataset
-        dataset_splits = self.data_processor.load_data(dataset_name)
-        
-        # Train the model
-        self.train_model(dataset_splits, "multilabel_model")
