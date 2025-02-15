@@ -15,7 +15,21 @@ class Pipeline:
     def __init__(self, config: ModelConfig):
         self.config = config
         self.set_seed()
-        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+        
+        # Enable TF32 for better performance on Ampere GPUs
+        if torch.cuda.is_available():
+            torch.set_float32_matmul_precision('high')
+            
+            # Enable cudnn benchmarking for better performance
+            torch.backends.cudnn.benchmark = True
+            
+            # Additional optimization: enable cudnn deterministic mode since we set a seed
+            torch.backends.cudnn.deterministic = True
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            config.model_name,
+            model_max_length=config.max_length
+        )
         self.data_processor = DataProcessor(self.tokenizer, config.max_length)
         self.model_trainer = ModelTrainer()
 
@@ -26,6 +40,11 @@ class Pipeline:
         torch.cuda.manual_seed_all(self.config.seed)
 
     def train_model(self, dataset_splits: dict, model_name: str) -> None:
+        # Log GPU information for debugging
+        if torch.cuda.is_available():
+            logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
+            logger.info(f"GPU Memory Usage: {torch.cuda.memory_allocated(0) / 1024**2:.2f} MB")
+        
         # Unpack the splits
         train_texts, train_labels = dataset_splits['train']
         val_texts, val_labels = dataset_splits['validation']
@@ -45,6 +64,10 @@ class Pipeline:
             config=self.config,
             problem_type="multi_label_classification"
         )
+        
+        # Log memory usage after training
+        if torch.cuda.is_available():
+            logger.info(f"GPU Memory Usage After Training: {torch.cuda.memory_allocated(0) / 1024**2:.2f} MB")
         
         # Save the final model and tokenizer
         trainer.save_model(f"./{model_name}_final")
