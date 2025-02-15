@@ -44,8 +44,8 @@ class ModelTrainer:
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             reference_compile=False,
-            num_labels=num_labels,  # Explicitly pass the number of labels
-            problem_type=problem_type  # Specify multi-label classification
+            num_labels=num_labels,  
+            problem_type=problem_type
         )
         
         trainer = Trainer(
