@@ -24,7 +24,7 @@ class DataProcessor:
         Load data from Hugging Face dataset
         """
         # Load the dataset with predefined splits
-        dataset = load_dataset(dataset_name, token=os.getenv("HUGGINGFACE_TOKEN"))
+        dataset = load_dataset(dataset_name)
         
         # Prepare data for each split
         def process_split(split_data):
