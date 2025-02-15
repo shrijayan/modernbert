@@ -33,7 +33,7 @@ class RedditPostClassifier:
 
     def predict(self, text: str) -> Dict:
         if not self.model:
-            raise ValueError("Model must be initialized before prediction")
+            self.initialize_model()
             
         inputs = self.tokenizer(
             text,
@@ -58,11 +58,11 @@ class RedditPostClassifier:
             # Get severity prediction
             severity_idx = severity_probs.argmax()
             severity_label = self.severity_labels[severity_idx]
-            severity_confidence = severity_probs[severity_idx]
+            severity_confidence = float(severity_probs[severity_idx])
             
             # Get action prediction
             action_label = self.action_labels[1] if action_prob > 0.5 else self.action_labels[0]
-            action_confidence = action_prob if action_prob > 0.5 else 1 - action_prob
+            action_confidence = float(action_prob if action_prob > 0.5 else 1 - action_prob)
             
             return {
                 "severity": {
