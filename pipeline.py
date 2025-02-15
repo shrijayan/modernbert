@@ -59,7 +59,7 @@ class Pipeline:
             num_labels=5,  # 4 severity levels + 1 action required
             output_dir=f"./{model_name}",
             config=self.config,
-            problem_type=self.config.classification_type.value
+            problem_type=self.config.classification_type
         )
         
         # Save the final model and tokenizer

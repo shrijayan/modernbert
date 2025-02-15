@@ -2,19 +2,14 @@
 from dataclasses import dataclass
 from enum import Enum
 
-class ClassificationType(Enum):
-    BINARY = "binary"
-    MULTICLASS = "multi_label_classification"
-    MULTILABEL = "multilabel"
-
 @dataclass
 class ModelConfig:
     model_name: str = "answerdotai/ModernBERT-base"
-    max_length: int = 512
-    batch_size: int = 4
+    max_length: int = 8192
+    batch_size: int = 2
     num_epochs: int = 3
     seed: int = 42
-    classification_type: ClassificationType = ClassificationType.MULTILABEL
+    classification_type: str = "multi_label_classification"
     gradient_accumulation_steps: int = 1
     warmup_ratio: float = 0.1
     weight_decay: float = 0.01
