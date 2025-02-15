@@ -19,7 +19,7 @@ class DataProcessor:
         # Add action as the last element
         return severity_one_hot + [int(action)]
 
-    def load_data(self, dataset_name: str = "shrijayan/medical_mimic") -> Tuple[dict]:
+    def load_data(self, dataset_name) -> Tuple[dict]:
         """
         Load data from Hugging Face dataset
         """

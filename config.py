@@ -21,4 +21,5 @@ class ModelConfig:
     weight_decay: float = 0.01
     learning_rate: float = 2e-5
     fp16: bool = True
+    dataset_name: str = "shrijayan/medical_mimic"
 
