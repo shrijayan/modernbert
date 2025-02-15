@@ -35,9 +35,10 @@ class ModelTrainer:
             save_strategy="steps",
             save_steps=500,
             load_best_model_at_end=True,
-            metric_for_best_model="f1"
+            metric_for_best_model="avg_f1",  # Changed from "f1" to "avg_f1" to match compute_multilabel_metrics
+            fp16=True  # Enable mixed precision training
         )
-        
+            
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             num_labels=num_labels,  # Explicitly pass the number of labels
