@@ -1,6 +1,4 @@
 # main.py
-import os
-from datetime import datetime
 from config import ModelConfig
 from pipeline import Pipeline
 
