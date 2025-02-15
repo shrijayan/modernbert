@@ -1,11 +1,9 @@
 # pipeline.py
-# import wandb
 import logging
 import random
 import numpy as np
 import torch
 from transformers import AutoTokenizer
-from typing import Tuple
 from config import ModelConfig
 from data_processor import DataProcessor
 from model_trainer import ModelTrainer
@@ -27,9 +25,13 @@ class Pipeline:
         torch.manual_seed(self.config.seed)
         torch.cuda.manual_seed_all(self.config.seed)
 
-    def train_model(self, texts: list[str], labels: list[list[int]], model_name: str) -> None:
-        train_texts, val_texts, train_labels, val_labels = self.data_processor.split_data(texts, labels)
+    def train_model(self, dataset_splits: dict, model_name: str) -> None:
+        # Unpack the splits
+        train_texts, train_labels = dataset_splits['train']
+        val_texts, val_labels = dataset_splits['validation']
+        test_texts, test_labels = dataset_splits['test']
         
+        # Prepare datasets for training and validation
         train_dataset = self.data_processor.prepare_dataset(train_texts, train_labels)
         val_dataset = self.data_processor.prepare_dataset(val_texts, val_labels)
         
@@ -44,11 +46,18 @@ class Pipeline:
             problem_type="multi_label_classification"
         )
         
+        # Save the final model and tokenizer
         trainer.save_model(f"./{model_name}_final")
         self.tokenizer.save_pretrained(f"./{model_name}_final")
+        
+        # Optional: Evaluate on test set
+        test_dataset = self.data_processor.prepare_dataset(test_texts, test_labels)
+        test_results = trainer.evaluate(test_dataset)
+        logger.info(f"Test Results: {test_results}")
 
-    def run(self, file1: str, file2: str):
-        # wandb.init(project="medical-text-classification")
-        texts, labels = self.data_processor.load_data(file1, file2)
-        self.train_model(texts, labels, "multilabel_model")
-        # wandb.finish()
+    def run(self, dataset_name: str = "shrijayan/medical_mimic"):
+        # Load data from Hugging Face dataset
+        dataset_splits = self.data_processor.load_data(dataset_name)
+        
+        # Train the model
+        self.train_model(dataset_splits, "multilabel_model")

@@ -5,7 +5,7 @@ from pipeline import Pipeline
 def main():
     config = ModelConfig()
     pipeline = Pipeline(config)
-    pipeline.run('dataset/medical_mimic(1).json', 'dataset/medical_mimic_new_(1).json')
+    pipeline.run()  # Uses default dataset "shrijayan/medical_mimic"
 
 if __name__ == "__main__":
     main()

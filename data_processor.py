@@ -1,11 +1,9 @@
 # data_processor.py
 import torch
-import json
 import numpy as np
 from typing import Dict, List, Tuple
-from datasets import Dataset as HFDataset
+from datasets import load_dataset, Dataset as HFDataset
 from transformers import AutoTokenizer
-from sklearn.model_selection import train_test_split
 
 class DataProcessor:
     def __init__(self, tokenizer, max_length: int = 512):
@@ -20,33 +18,35 @@ class DataProcessor:
         # Add action as the last element
         return severity_one_hot + [int(action)]
 
-    def load_data(self, file1: str, file2: str) -> Tuple[List[str], List[List[int]]]:
-        with open(file1, 'r', encoding='utf-8') as f:
-            data1 = json.load(f)
-        with open(file2, 'r', encoding='utf-8') as f:
-            data2 = json.load(f)
+    def load_data(self, dataset_name: str = "shrijayan/medical_mimic") -> Tuple[dict]:
+        """
+        Load data from Hugging Face dataset
+        """
+        # Load the dataset with predefined splits
+        dataset = load_dataset(dataset_name)
         
-        data = data1 + data2
+        # Prepare data for each split
+        def process_split(split_data):
+            texts = [entry['raw_data']['text'] for entry in split_data]
+            labels = [
+                self.create_multilabel(
+                    entry['parsed_data']['severity'],
+                    entry['parsed_data']['immediate_action_required']
+                )
+                for entry in split_data
+            ]
+            return texts, labels
         
-        texts = [entry['raw_data']['text'] for entry in data]
-        # Create multilabel data with one-hot encoded severity and binary action
-        labels = [
-            self.create_multilabel(
-                entry['parsed_data']['severity'],
-                entry['parsed_data']['immediate_action_required']
-            )
-            for entry in data
-        ]
+        # Process each split
+        train_texts, train_labels = process_split(dataset['train'])
+        val_texts, val_labels = process_split(dataset['validation'])
+        test_texts, test_labels = process_split(dataset['test'])
         
-        return texts, labels
-
-    def split_data(self, texts: List[str], labels: List[List[int]]) -> Tuple:
-        """Split the data into training and validation sets."""
-        return train_test_split(
-            texts, labels, 
-            test_size=0.2, 
-            random_state=42
-        )
+        return {
+            'train': (train_texts, train_labels),
+            'validation': (val_texts, val_labels),
+            'test': (test_texts, test_labels)
+        }
         
     def prepare_dataset(self, texts: List[str], labels: List[List[int]]) -> HFDataset:
         encodings = self.tokenizer(
