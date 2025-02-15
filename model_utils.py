@@ -22,7 +22,9 @@ def compute_metrics(pred):
 # model_utils.py
 def compute_multilabel_metrics(pred):
     labels = pred.label_ids
-    preds = (pred.predictions > 0).astype(int)
+    # Apply sigmoid to get probabilities
+    probs = torch.sigmoid(torch.Tensor(pred.predictions))
+    preds = (probs > 0.5).int().numpy()
     
     # Split predictions and labels for severity and action
     severity_labels = labels[:, :4]  # First 4 elements are one-hot severity
