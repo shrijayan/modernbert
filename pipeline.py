@@ -30,7 +30,9 @@ class Pipeline:
             config.model_name,
             model_max_length=config.max_length
         )
+        
         self.data_processor = DataProcessor(self.tokenizer, config.max_length)
+        
         self.model_trainer = ModelTrainer()
 
     def set_seed(self):
@@ -49,13 +51,12 @@ class Pipeline:
         train_dataset = self.data_processor.prepare_dataset(train_texts, train_labels)
         val_dataset = self.data_processor.prepare_dataset(val_texts, val_labels)
         
-        # Train the model using ModelTrainer
         model_name = "multilabel_model"
         trainer = self.model_trainer.train(
             self.config.model_name,
             train_dataset,
             val_dataset,
-            num_labels=5,  # 4 severity levels + 1 action required
+            num_labels=5,
             output_dir=f"./{model_name}",
             config=self.config,
             problem_type=self.config.classification_type
