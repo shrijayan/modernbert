@@ -31,11 +31,11 @@ class ModelTrainer:
             learning_rate=config.learning_rate,
             gradient_accumulation_steps=config.gradient_accumulation_steps,
             logging_dir='./logs',
-            logging_steps=10,
-            eval_strategy="steps",
-            eval_steps=500,
-            save_strategy="steps",
-            save_steps=500,
+            logging_steps=config.logging_steps,
+            eval_strategy=config.eval_and_save_strategy,
+            eval_steps=config.eval_and_save_steps,
+            save_strategy=config.eval_and_save_strategy,
+            save_steps=config.eval_and_save_steps,
             load_best_model_at_end=True,
             metric_for_best_model="avg_f1",
             fp16=config.fp16
@@ -44,7 +44,7 @@ class ModelTrainer:
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             reference_compile=False,
-            num_labels=num_labels,  
+            num_labels=num_labels,
             problem_type=problem_type
         )
         

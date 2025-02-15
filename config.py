@@ -4,7 +4,7 @@ from enum import Enum
 
 class ClassificationType(Enum):
     BINARY = "binary"
-    MULTICLASS = "multiclass"
+    MULTICLASS = "multi_label_classification"
     MULTILABEL = "multilabel"
 
 @dataclass
@@ -20,5 +20,8 @@ class ModelConfig:
     weight_decay: float = 0.01
     learning_rate: float = 2e-5
     fp16: bool = True
-    dataset_name: str = "shrijayan/medical_mimic"
     early_stopping_patience: int = 5
+    eval_and_save_steps: int = 500
+    eval_and_save_strategy: str = "steps"
+    logging_steps: int = 100
+    dataset_name: str = "shrijayan/medical_mimic"
