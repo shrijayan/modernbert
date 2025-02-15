@@ -4,3 +4,4 @@ numpy
 datasets
 scikit-learn
 psutil
+wandb

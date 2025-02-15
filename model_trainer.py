@@ -40,6 +40,7 @@ class ModelTrainer:
             save_steps=config.eval_and_save_steps,
             load_best_model_at_end=True,
             metric_for_best_model="avg_f1",
+            report_to=config.report_to,
             fp16=config.fp16
         )
             
