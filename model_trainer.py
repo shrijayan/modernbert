@@ -2,6 +2,7 @@
 import torch
 from transformers import (
     AutoModelForSequenceClassification,
+    AutoTokenizer,
     TrainingArguments,
     Trainer,
     EarlyStoppingCallback
@@ -14,6 +15,7 @@ class ModelTrainer:
     def train(
         self,
         model_name: str,
+        tokenizer: AutoTokenizer,  # Add tokenizer parameter
         train_dataset: HFDataset,
         eval_dataset: HFDataset,
         num_labels: int,
@@ -51,6 +53,7 @@ class ModelTrainer:
         trainer = Trainer(
             model=model,
             args=training_args,
+            tokenizer=tokenizer,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_multilabel_metrics,

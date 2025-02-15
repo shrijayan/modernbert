@@ -53,9 +53,10 @@ class Pipeline:
         
         model_name = "multilabel_model"
         trainer = self.model_trainer.train(
-            self.config.model_name,
-            train_dataset,
-            val_dataset,
+            model_name=self.config.model_name,
+            tokenizer=self.tokenizer,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
             num_labels=5,
             output_dir=f"./{model_name}",
             config=self.config,
