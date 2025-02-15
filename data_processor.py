@@ -4,6 +4,7 @@ import numpy as np
 from typing import Dict, List, Tuple
 from datasets import load_dataset, Dataset as HFDataset
 from transformers import AutoTokenizer
+import os
 
 class DataProcessor:
     def __init__(self, tokenizer, max_length: int = 512):
@@ -23,7 +24,7 @@ class DataProcessor:
         Load data from Hugging Face dataset
         """
         # Load the dataset with predefined splits
-        dataset = load_dataset(dataset_name)
+        dataset = load_dataset(dataset_name, token=os.getenv("HUGGINGFACE_TOKEN"))
         
         # Prepare data for each split
         def process_split(split_data):
