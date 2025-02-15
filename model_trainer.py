@@ -32,7 +32,7 @@ class ModelTrainer:
             gradient_accumulation_steps=config.gradient_accumulation_steps,
             logging_dir='./logs',
             logging_steps=10,
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             eval_steps=500,
             save_strategy="steps",
             save_steps=500,
