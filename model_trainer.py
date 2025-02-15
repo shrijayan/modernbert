@@ -54,7 +54,7 @@ class ModelTrainer:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_multilabel_metrics,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)]
         )
         
         trainer.train()

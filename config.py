@@ -21,4 +21,4 @@ class ModelConfig:
     learning_rate: float = 2e-5
     fp16: bool = True
     dataset_name: str = "shrijayan/medical_mimic"
-
+    early_stopping_patience: int = 5
