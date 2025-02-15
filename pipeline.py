@@ -42,7 +42,6 @@ class Pipeline:
     def run(self, dataset_name):
         dataset_splits = self.data_processor.load_data(dataset_name)
         
-        # Prepare datasets
         train_texts, train_labels = dataset_splits['train']
         val_texts, val_labels = dataset_splits['validation']
         test_texts, test_labels = dataset_splits['test']
