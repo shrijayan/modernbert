@@ -61,5 +61,10 @@ class ModelTrainer:
             callbacks=[EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)]
         )
         
+        lr_finder = trainer.lr_find()
+        if lr_finder is not None:
+            config.learning_rate = lr_finder.suggestion()
+        
         trainer.train()
         return trainer
+
